@@ -1,11 +1,14 @@
 import OrbitControls from "./lib/OrbitControls";
-import { SSAARenderPass, OBJExporter, GLTFExporter, PLYExporter } from "threejs-ext";
-import EffectComposer, { ShaderPass, CopyShader } from "@johh/three-effectcomposer";
+// import { SSAARenderPass, OBJExporter, GLTFExporter, PLYExporter } from "threejs-ext";
+/* import EffectComposer, { ShaderPass, CopyShader } from "@johh/three-effectcomposer"; */
+import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer";
+import {ShaderPass} from "three/examples/jsm/postprocessing/ShaderPass";
+import {CopyShader} from "three/examples/jsm/shaders/CopyShader";
+import {SSAARenderPass} from "three/examples/jsm/postprocessing/SSAARenderPass";
 import * as THREE from "three";
 import OnScreen from "onscreen";
-import * as $ from "jquery";
 import Stats from "stats.js";
-import { trimCanvas, DEFAULT_ROOT } from "./functions";
+import {trimCanvas} from "./functions";
 
 /**
  * @property {boolean} showAxes                 Debugging - Show the scene's axes
@@ -54,8 +57,7 @@ export const defaultOptions = {
     frameRateLimit: -1,
     enableStats: false,
     pauseHidden: true,
-    forceContext: false,
-    sendStats: true
+    forceContext: false
 };
 
 /**
@@ -111,38 +113,13 @@ export default class Render {
     };
 
     /**
-     * Export the current scene content in the .obj format (only geometries, no textures)
-     * @returns {string} the .obj file content
+     * Initializes basic Scene light
+     * @param scene
      */
-    toObj() {
-        if (this._scene) {
-            let exporter = new OBJExporter();
-            return exporter.parse(this._scene);
-        }
-    }
-
-    /**
-     * Export the current scene content in the .gltf format (geometries + textures)
-     * @returns {Promise<any>} a promise which resolves with the .gltf file content
-     */
-    toGLTF(exportOptions) {
-        return new Promise((resolve, reject) => {
-            if (this._scene) {
-                let exporter = new GLTFExporter();
-                exporter.parse(this._scene, (gltf) => {
-                    resolve(gltf);
-                }, exportOptions)
-            } else {
-                reject();
-            }
-        })
-    }
-
-    toPLY(exportOptions) {
-        if (this._scene) {
-            let exporter = new PLYExporter();
-            return exporter.parse(this._scene, exportOptions);
-        }
+    initLight(scene)
+    {
+        let light = new THREE.AmbientLight(0xF0F0F0); // soft white light
+        scene.add(light);
     }
 
     /**
@@ -160,33 +137,6 @@ export default class Render {
         console.log((PRODUCTION ? "PRODUCTION" : "DEVELOPMENT") + " build");
         console.log("Built @ " + BUILD_DATE);
         console.log(" ");
-
-        if (renderObj.options.sendStats) {
-            // Send stats
-
-            let iframe = false;
-            try {
-                iframe = window.self !== window.top;
-            } catch (e) {
-                return true;
-            }
-            let hostname;
-            try{
-                hostname = new URL(iframe ? document.referrer : window.location).hostname;
-            }catch (e) {
-                console.warn("Failed to get hostname");
-            }
-
-            $.post({
-                url: "https://minerender.org/stats.php",
-                data: {
-                    action: "init",
-                    type: renderObj.renderType,
-                    host: hostname,
-                    source: (iframe ? "iframe" : "javascript")
-                }
-            });
-        }
 
         // Scene INIT
         let scene = new THREE.Scene();
@@ -257,8 +207,7 @@ export default class Render {
             scene.add(new THREE.GridHelper(100, 100));
         }
 
-        let light = new THREE.AmbientLight(0xFFFFFF); // soft white light
-        scene.add(light);
+        this.initLight(scene);
 
         // Init controls
         let controls = new OrbitControls(camera, renderer.domElement);
@@ -385,10 +334,12 @@ export default class Render {
                 deepDisposeMesh(child, true);
                 this._scene.remove(child);
             }
-        } else {
+        } else
+        {
             while (this._scene.children.length > 0) {
                 this._scene.remove(this._scene.children[0]);
             }
+            this.initLight(this._scene);
         }
     };
 

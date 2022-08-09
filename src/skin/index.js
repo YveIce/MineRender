@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import texturePositions from "./texturePositions";
-import Render, { defaultOptions } from "../renderBase";
+import Render, {defaultOptions} from "../renderBase";
 
 /**
  * @see defaultOptions
@@ -345,23 +345,28 @@ class SkinRender extends Render {
 
 }
 
-function createCube(texture, width, height, depth, textures, slim, name, transparent) {
+function createCube(texture, width, height, depth, texturePos, slim, name, transparent) {
+    // texturePos {"top": {w,x,h,y},...}
     let textureWidth = texture.image.width;
     let textureHeight = texture.image.height;
 
     let geometry = new THREE.BoxGeometry(width, height, depth);
-    let material = new THREE.MeshBasicMaterial({
-        /*color: 0x00ff00,*/map: texture, transparent: transparent || false, alphaTest: 0.1, side: transparent ? THREE.DoubleSide : THREE.FrontSide//TODO: double sided not working properly
+    let material = new THREE.MeshPhongMaterial({
+        /*color: 0x00ff00,map: texture, transparent: transparent || false, alphaTest: 0.1, side: transparent ? THREE.DoubleSide : THREE.FrontSide//TODO: double sided not working properly */
+        map: texture, transparent: transparent || false, alphaTest: 0.1, side: THREE.DoubleSide
+
     });
 
     geometry.computeBoundingBox();
 
-    geometry.faceVertexUvs[0] = [];
+    const uvAttribute = geometry.getAttribute("uv");
+    const uvArray = uvAttribute.array;
+    const index = geometry.getIndex();
 
     let faceNames = ["right", "left", "top", "bottom", "front", "back"];
     let faceUvs = [];
     for (let i = 0; i < faceNames.length; i++) {
-        let face = textures[faceNames[i]];
+        let face = texturePos[faceNames[i]];
         if (faceNames[i] === "back") {
             //     console.log(face)
             // console.log("X: " + (slim && face.sx ? face.sx : face.x))
@@ -400,24 +405,46 @@ function createCube(texture, width, height, depth, textures, slim, name, transpa
             faceUvs[i][2] = temp[1];
             faceUvs[i][3] = temp[0]
         }
+
+
+        uvAttribute.setXY(index.getX((i*12)+0), faceUvs[i][0].x, faceUvs[i][0].y);
+        uvAttribute.setXY(index.getX((i*12)+1), faceUvs[i][1].x, faceUvs[i][1].y);
+        uvAttribute.setXY(index.getX((i*12)+2), faceUvs[i][2].x, faceUvs[i][2].y);
+        uvAttribute.setXY(index.getX((i*12)+3), faceUvs[i][3].x, faceUvs[i][3].y);
+
+        
+        
     }
 
+
+
+
+
+    
+    
+    
     let j = 0;
-    for (let i = 0; i < faceUvs.length; i++) {
-        geometry.faceVertexUvs[0][j] = [faceUvs[i][0], faceUvs[i][1], faceUvs[i][3]];
-        geometry.faceVertexUvs[0][j + 1] = [faceUvs[i][1], faceUvs[i][2], faceUvs[i][3]];
+    for (let i = 0; i < index.count; i++) {
+//        uvAttribute.setXY(index.getX((i*12)+(i*12)+i), faceUvs[i][0], faceUvs[i][1] );
+//        uvAttribute.setXY(index.getX((i*12)+(i*12)+j+1), faceUvs[i][2], faceUvs[i][3] );
+//        uvAttribute.setXY(index.getX((i*12)+(i*12)+j+1), faceUvs[i][2], faceUvs[i][3] );
+//        uvAttribute.setXY(index.getX((i*12)+(i*12)+j+2), faceUvs[i][0], faceUvs[i][1] );
+//        uvAttribute.setXY(index.getX((i*12)+(i*12)+j+3), faceUvs[i][0], faceUvs[i][1] );
+//        uvAttribute.setXYZ(j+1, faceUvs[i][1], faceUvs[i][2], faceUvs[i][3]);
+//        uvArray[j] = [faceUvs[i][0], faceUvs[i][1], faceUvs[i][3]];
+//        uvArray[j + 1] = [faceUvs[i][1], faceUvs[i][2], faceUvs[i][3]];
         j += 2;
     }
-    geometry.uvsNeedUpdate = true;
+    uvAttribute.needsUpdate = true;
 
     let cube = new THREE.Mesh(geometry, material);
     cube.name = name;
     // cube.position.set(x, y, z);
     cube.castShadow = true;
-    cube.receiveShadow = false;
+    cube.receiveShadow = true;
 
     return cube;
-};
+}
 
 
 function createPlayerModel(skinTexture, capeTexture, v, slim, capeType) {
@@ -627,7 +654,7 @@ function createPlayerModel(skinTexture, capeTexture, v, slim, capeType) {
     }
 
     return playerGroup;
-};
+}
 
 // From https://soledadpenades.com/articles/three-js-tutorials/drawing-the-coordinate-axes/
 function buildAxes(length) {
@@ -642,7 +669,7 @@ function buildAxes(length) {
 
     return axes;
 
-};
+}
 
 function buildAxis(src, dst, colorHex, dashed) {
     let geom = new THREE.Geometry(),
@@ -659,7 +686,7 @@ function buildAxis(src, dst, colorHex, dashed) {
     geom.computeLineDistances(); // This one is SUPER important, otherwise dashed lines will appear as simple plain lines
 
     return new THREE.Line(geom, mat, THREE.LinePieces);
-};
+}
 
 function toRadians(angle) {
     return angle * (Math.PI / 180);

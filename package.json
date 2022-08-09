@@ -1,6 +1,6 @@
 {
   "name": "minerender",
-  "version": "1.4.11",
+  "version": "1.5.0",
   "description": "",
   "main": "src/combined/index.js",
   "scripts": {
@@ -17,7 +17,6 @@
   },
   "homepage": "https://minerender.org",
   "dependencies": {
-    "@johh/three-effectcomposer": "0.0.7",
     "debug": "^2.6.9",
     "deepmerge": "^4.0.0",
     "esdoc": "^1.1.0",
@@ -30,7 +29,7 @@
     "pako": "^1.0.6",
     "prismarine-nbt": "^1.2.0",
     "stats.js": "^0.17.0",
-    "three": "0.93.0",
+    "three": "0.134.0",
     "three-instanced-mesh": "git+https://github.com/InventivetalentDev/three-instanced-mesh.git",
     "threejs-ext": "^0.92.0",
     "webworkify-webpack": "^2.1.3"
